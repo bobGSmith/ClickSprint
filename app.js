@@ -5,6 +5,7 @@ const pbReadout = document.querySelector("#pbReadout");
 const signalText = document.querySelector("#signalText");
 const startButton = document.querySelector("#startButton");
 const openLeaderboardButton = document.querySelector("#openLeaderboardButton");
+const shoeControls = document.querySelector(".shoe-controls");
 const leftShoe = document.querySelector("#leftShoe");
 const rightShoe = document.querySelector("#rightShoe");
 const resultsPanel = document.querySelector("#resultsPanel");
@@ -49,8 +50,9 @@ let raceStartAt = 0;
 let goAt = 0;
 let finishAt = 0;
 let firstClickAt = 0;
-let expectedFoot = "left";
+let expectedFoot = null;
 let validClicks = [];
+let lastTapAtByFoot = { left: 0, right: 0 };
 let countdownTimers = [];
 let falseStartTimer = 0;
 let signalTimer = 0;
@@ -212,8 +214,9 @@ function resetRace() {
   goAt = 0;
   finishAt = 0;
   firstClickAt = 0;
-  expectedFoot = "left";
+  expectedFoot = null;
   validClicks = [];
+  lastTapAtByFoot = { left: 0, right: 0 };
   currentResult = null;
   startButton.hidden = false;
   startButton.textContent = "Start";
@@ -305,13 +308,16 @@ function handleShoeTap(foot) {
   if (state !== "running") return;
 
   const now = performance.now();
-  if (foot !== expectedFoot) {
+  if (expectedFoot && foot !== expectedFoot) {
+    if (now - lastTapAtByFoot[foot] < 90) return;
+    lastTapAtByFoot[foot] = now;
     const button = foot === "left" ? leftShoe : rightShoe;
     button.classList.add("invalid");
     setTimeout(() => button.classList.remove("invalid"), 190);
     return;
   }
 
+  lastTapAtByFoot[foot] = now;
   if (!firstClickAt) firstClickAt = now;
   validClicks.push(now);
   distance = Math.min(RACE_METERS, distance + METERS_PER_CLICK);
@@ -701,12 +707,26 @@ function bindShoe(button, foot) {
   button.addEventListener(
     "pointerdown",
     (event) => {
+      if (event.pointerType === "touch") return;
       event.preventDefault();
       handleShoeTap(foot);
     },
     { passive: false },
   );
 }
+
+shoeControls.addEventListener(
+  "touchstart",
+  (event) => {
+    event.preventDefault();
+    const bounds = shoeControls.getBoundingClientRect();
+    const midpoint = bounds.left + bounds.width / 2;
+    for (const touch of event.changedTouches) {
+      handleShoeTap(touch.clientX < midpoint ? "left" : "right");
+    }
+  },
+  { passive: false },
+);
 
 startButton.addEventListener("click", startCountdown);
 closeResultsButton.addEventListener("click", () => {
