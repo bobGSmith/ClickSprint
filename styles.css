@@ -91,6 +91,21 @@ strong {
   line-height: 1;
 }
 
+.leaderboard-button {
+  position: absolute;
+  z-index: 6;
+  top: calc(max(14px, env(safe-area-inset-top)) + 58px);
+  right: 14px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(18, 20, 17, 0.82);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
 .track {
   position: absolute;
   left: 50%;
@@ -367,18 +382,57 @@ strong {
   transform: scaleX(-1);
 }
 
-.results {
-  position: absolute;
-  z-index: 8;
-  left: 50%;
-  bottom: calc(112px + env(safe-area-inset-bottom));
-  width: min(92vw, 520px);
+.modal {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  padding: 12px 10px max(12px, env(safe-area-inset-bottom));
+  background: rgba(7, 8, 6, 0.58);
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-card {
+  width: min(100%, 560px);
+  max-height: min(88svh, 720px);
+  margin: 0 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 12px;
-  transform: translateX(-50%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
-  background: rgba(18, 20, 17, 0.92);
-  backdrop-filter: blur(10px);
+  background: rgba(18, 20, 17, 0.97);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.48);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: #22251d;
+  color: var(--text);
+  font-weight: 1000;
 }
 
 .result-grid {
@@ -391,9 +445,63 @@ strong {
 #cpsChart {
   display: block;
   width: 100%;
-  height: 122px;
+  height: clamp(150px, 27svh, 230px);
   border-radius: 6px;
   background: #0f120d;
+}
+
+.submit-run {
+  margin-top: 10px;
+}
+
+.submit-run label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.submit-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.submit-row input {
+  min-width: 0;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: #0f120d;
+  color: var(--text);
+  padding: 0 10px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.submit-row button,
+.tab-button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #17140b;
+  padding: 0 12px;
+  font-weight: 1000;
+}
+
+.submit-row button:disabled {
+  opacity: 0.55;
+}
+
+#submitStatus {
+  min-height: 18px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .leaderboard {
@@ -423,8 +531,95 @@ strong {
   padding-left: 2px;
 }
 
+#leaderboardList span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 #leaderboardList .new-result {
   color: var(--accent);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tab-button {
+  background: #22251d;
+  color: var(--text);
+}
+
+.tab-button.active {
+  background: var(--accent);
+  color: #17140b;
+}
+
+.tab-panel {
+  min-height: 260px;
+}
+
+.leaderboard-table {
+  max-height: min(62svh, 510px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #0f120d;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 28px minmax(76px, 1fr) 64px 62px 58px;
+  gap: 6px;
+  align-items: center;
+  min-height: 38px;
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.leaderboard-row strong {
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-row span {
+  min-width: 0;
+}
+
+.leaderboard-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #22251d;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 18px;
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.histogram-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.histogram {
+  display: block;
+  width: 100%;
+  height: 150px;
+  border-radius: 6px;
+  background: #0f120d;
 }
 
 @media (min-width: 720px) {
@@ -432,5 +627,9 @@ strong {
     width: min(430px, 100vw);
     margin: 0 auto;
     border-inline: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .modal {
+    align-items: center;
   }
 }

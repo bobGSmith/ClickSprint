@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leaderboard/{runId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasOnly([
+          'name',
+          'timeMs',
+          'topSpeedCps',
+          'reactionMs',
+          'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 18
+        && request.resource.data.timeMs is int
+        && request.resource.data.timeMs >= 5000
+        && request.resource.data.timeMs <= 60000
+        && request.resource.data.topSpeedCps is number
+        && request.resource.data.topSpeedCps >= 0
+        && request.resource.data.topSpeedCps <= 40
+        && request.resource.data.reactionMs is int
+        && request.resource.data.reactionMs >= 0
+        && request.resource.data.reactionMs <= 5000
+        && request.resource.data.createdAt is timestamp;
+
+      allow update, delete: if false;
+    }
+  }
+}

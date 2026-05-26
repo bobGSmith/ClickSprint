@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+.firebase/
+.env
+.env.*
+*.log
+*firebase-adminsdk*.json
+service-account*.json
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

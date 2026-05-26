@@ -27,6 +27,7 @@
             <strong id="pbReadout">--</strong>
           </div>
         </div>
+        <button class="leaderboard-button" id="openLeaderboardButton" type="button">Leaderboard</button>
 
         <div class="track">
           <div class="start-line"><span>Start</span></div>
@@ -47,21 +48,73 @@
         <button class="start-button" id="startButton" type="button">Start</button>
       </section>
 
-      <section class="results" id="resultsPanel" hidden>
-        <div class="result-grid">
-          <div>
-            <span class="label">Total time</span>
-            <strong id="resultTime">0.00s</strong>
+      <section class="modal results-modal" id="resultsPanel" hidden aria-label="Race analysis">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h2>Race Analysis</h2>
+            <button class="icon-button" id="closeResultsButton" type="button" aria-label="Close results">x</button>
           </div>
-          <div>
-            <span class="label">Reaction</span>
-            <strong id="reactionTime">--</strong>
+
+          <div class="result-grid">
+            <div>
+              <span class="label">Total time</span>
+              <strong id="resultTime">0.00s</strong>
+            </div>
+            <div>
+              <span class="label">Reaction</span>
+              <strong id="reactionTime">--</strong>
+            </div>
+            <div>
+              <span class="label">Top speed</span>
+              <strong id="topSpeedReadout">0.0/s</strong>
+            </div>
+            <div>
+              <span class="label">PB</span>
+              <strong id="resultPbReadout">--</strong>
+            </div>
+          </div>
+
+          <canvas id="cpsChart" width="640" height="260" aria-label="Clicks per second over time"></canvas>
+
+          <form class="submit-run" id="submitRunForm">
+            <label for="playerName">Name</label>
+            <div class="submit-row">
+              <input id="playerName" name="playerName" type="text" maxlength="18" autocomplete="nickname" placeholder="Your name" />
+              <button type="submit">Submit</button>
+            </div>
+            <p id="submitStatus" role="status"></p>
+          </form>
+
+          <div class="leaderboard">
+            <div class="leaderboard-title">Local Top 10</div>
+            <ol id="leaderboardList"></ol>
           </div>
         </div>
-        <canvas id="cpsChart" width="640" height="220" aria-label="Clicks per second over time"></canvas>
-        <div class="leaderboard">
-          <div class="leaderboard-title">Top 10</div>
-          <ol id="leaderboardList"></ol>
+      </section>
+
+      <section class="modal leaderboard-modal" id="leaderboardModal" hidden aria-label="Leaderboard">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h2>Leaderboard</h2>
+            <button class="icon-button" id="closeLeaderboardButton" type="button" aria-label="Close leaderboard">x</button>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Leaderboard views">
+            <button class="tab-button active" id="scoresTab" type="button">Scores</button>
+            <button class="tab-button" id="statsTab" type="button">Stats</button>
+          </div>
+
+          <div class="tab-panel" id="scoresPanel">
+            <div class="leaderboard-table" id="remoteLeaderboard"></div>
+          </div>
+
+          <div class="tab-panel" id="statsPanel" hidden>
+            <div class="histogram-grid">
+              <canvas class="histogram" id="timeHistogram" width="640" height="190" aria-label="Best times histogram"></canvas>
+              <canvas class="histogram" id="speedHistogram" width="640" height="190" aria-label="Top speeds histogram"></canvas>
+              <canvas class="histogram" id="reactionHistogram" width="640" height="190" aria-label="Reaction times histogram"></canvas>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -75,6 +128,7 @@
       </section>
     </main>
 
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

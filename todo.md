@@ -1,0 +1,9 @@
+# To Do
+* create a firebase rules file that can be pushed to the new firebase database
+* create a file in the repo for storing any information needed regarding firebase etc
+* create a .gitignore for anything that should not be pushed 
+* adjust the end of race analysis graph so that it fits the screen left and right, make it more of a modal that pops up and covers more of the screen and has the graph and some stats below about the run. 
+* the end of race modal should have a place to enter your name and submit the run to the firebase leaderboard. 
+* firebase leaderboard should store the race time, the top speed reached in clicks per second (this should be finding the fastest 10 meter split time (however many clicks it takes to run 10 m, find the fastest grouping of that many from the race to get the top speed in cps)), the name of the user, and the reaction time. this stuff is the info that should be shown on the end of race page too. 
+* there should be a button at the top to view the leaderboard and that should pop up a modal. The modal should have one tab of the raw leaderboard top 10 (it should give the time, top speed and reaction time too), but with scroll bar to view further down (maybe top 100 max scroll). Then another tab called stats, where it shows a histogram of all the best times, top speeds, and the best reaction times and plots a vertical line showing where your PB sits on the histogram. 
+* i have created a firestore databse clicksprint-a3028 so we can set this up. let me know if i need to get anything externally to hook it all up initally so you can push the rules etc to firebase.
