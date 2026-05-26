@@ -5,7 +5,6 @@ const pbReadout = document.querySelector("#pbReadout");
 const signalText = document.querySelector("#signalText");
 const startButton = document.querySelector("#startButton");
 const openLeaderboardButton = document.querySelector("#openLeaderboardButton");
-const shoeControls = document.querySelector(".shoe-controls");
 const leftShoe = document.querySelector("#leftShoe");
 const rightShoe = document.querySelector("#rightShoe");
 const resultsPanel = document.querySelector("#resultsPanel");
@@ -43,6 +42,7 @@ const STORAGE_KEY = "tapSprintTopResults";
 const PB_STORAGE_KEY = "tapSprintPersonalBests";
 const LEGACY_STORAGE_KEY = "tapSprintTopTimes";
 const FIREBASE_CONFIG = window.CLICKSPRINT_FIREBASE_CONFIG || {};
+const DUPLICATE_TAP_IGNORE_MS = 60;
 
 let state = "idle";
 let distance = 0;
@@ -309,7 +309,7 @@ function handleShoeTap(foot) {
 
   const now = performance.now();
   if (expectedFoot && foot !== expectedFoot) {
-    if (now - lastTapAtByFoot[foot] < 90) return;
+    if (now - lastTapAtByFoot[foot] < DUPLICATE_TAP_IGNORE_MS) return;
     lastTapAtByFoot[foot] = now;
     const button = foot === "left" ? leftShoe : rightShoe;
     button.classList.add("invalid");
@@ -758,26 +758,12 @@ function bindShoe(button, foot) {
   button.addEventListener(
     "pointerdown",
     (event) => {
-      if (event.pointerType === "touch") return;
       event.preventDefault();
       handleShoeTap(foot);
     },
     { passive: false },
   );
 }
-
-shoeControls.addEventListener(
-  "touchstart",
-  (event) => {
-    event.preventDefault();
-    const bounds = shoeControls.getBoundingClientRect();
-    const midpoint = bounds.left + bounds.width / 2;
-    for (const touch of event.changedTouches) {
-      handleShoeTap(touch.clientX < midpoint ? "left" : "right");
-    }
-  },
-  { passive: false },
-);
 
 startButton.addEventListener("click", startCountdown);
 closeResultsButton.addEventListener("click", () => {
