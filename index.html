@@ -26,8 +26,11 @@
             <span class="label">PB</span>
             <strong id="pbReadout">--</strong>
           </div>
+          <button class="leaderboard-button" id="openLeaderboardButton" type="button">
+            <span aria-hidden="true">🏆</span>
+            <strong>Board</strong>
+          </button>
         </div>
-        <button class="leaderboard-button" id="openLeaderboardButton" type="button">Leaderboard</button>
 
         <div class="track">
           <div class="start-line"><span>Start</span></div>
@@ -51,7 +54,10 @@
       <section class="modal results-modal" id="resultsPanel" hidden aria-label="Race analysis">
         <div class="modal-card">
           <div class="modal-header">
-            <h2>Race Analysis</h2>
+            <div class="finish-title">
+              <h2>FINISH!</h2>
+              <p id="finishSubtitle">Race complete</p>
+            </div>
             <button class="icon-button" id="closeResultsButton" type="button" aria-label="Close results">x</button>
           </div>
 
@@ -65,7 +71,7 @@
               <strong id="reactionTime">--</strong>
             </div>
             <div>
-              <span class="label">Top speed</span>
+              <span class="label">Top speed (10m)</span>
               <strong id="topSpeedReadout">0.0/s</strong>
             </div>
             <div>

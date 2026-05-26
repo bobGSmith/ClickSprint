@@ -9,6 +9,7 @@ const leftShoe = document.querySelector("#leftShoe");
 const rightShoe = document.querySelector("#rightShoe");
 const resultsPanel = document.querySelector("#resultsPanel");
 const closeResultsButton = document.querySelector("#closeResultsButton");
+const finishSubtitle = document.querySelector("#finishSubtitle");
 const resultTime = document.querySelector("#resultTime");
 const reactionTime = document.querySelector("#reactionTime");
 const topSpeedReadout = document.querySelector("#topSpeedReadout");
@@ -38,6 +39,7 @@ const METERS_PER_CLICK = RACE_METERS / (TARGET_CLICKS_PER_SECOND * TARGET_SECOND
 const CLICKS_FOR_10M = Math.ceil(10 / METERS_PER_CLICK);
 const COUNTDOWN_STEP_MS = 760;
 const STORAGE_KEY = "tapSprintTopResults";
+const PB_STORAGE_KEY = "tapSprintPersonalBests";
 const LEGACY_STORAGE_KEY = "tapSprintTopTimes";
 const FIREBASE_CONFIG = window.CLICKSPRINT_FIREBASE_CONFIG || {};
 
@@ -54,6 +56,8 @@ let falseStartTimer = 0;
 let signalTimer = 0;
 let rafId = 0;
 let currentResult = null;
+let leaderboardResults = [];
+let leaderboardSort = { key: "timeMs", direction: "asc" };
 
 function formatSeconds(ms) {
   return `${(ms / 1000).toFixed(2)}s`;
@@ -83,7 +87,17 @@ function loadLocalResults() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     if (Array.isArray(stored) && stored.length) {
-      return stored.filter((result) => Number.isFinite(result.timeMs)).slice(0, 10);
+      return stored
+        .filter((result) => Number.isFinite(result.timeMs))
+        .map((result) => ({
+          id: result.id || `${result.timeMs}-${result.createdAt || ""}`,
+          name: result.name || "Local",
+          timeMs: result.timeMs,
+          topSpeedCps: Number.isFinite(result.topSpeedCps) ? result.topSpeedCps : 0,
+          reactionMs: Number.isFinite(result.reactionMs) ? result.reactionMs : null,
+          createdAt: result.createdAt || "",
+        }))
+        .slice(0, 10);
     }
 
     const legacy = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || "[]");
@@ -98,12 +112,57 @@ function loadLocalResults() {
   }
 }
 
+function bestLocalValue(key, mode) {
+  const values = loadLocalResults().map((result) => result[key]).filter(Number.isFinite);
+  if (!values.length) return null;
+  return mode === "max" ? Math.max(...values) : Math.min(...values);
+}
+
 function saveLocalResults(results) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(results.slice(0, 10)));
   } catch {
     // Locked-down storage should not stop the race flow.
   }
+}
+
+function loadLocalPbs() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PB_STORAGE_KEY) || "{}");
+    return {
+      timeMs: Number.isFinite(stored.timeMs) ? stored.timeMs : bestLocalValue("timeMs", "min"),
+      topSpeedCps: Number.isFinite(stored.topSpeedCps) ? stored.topSpeedCps : bestLocalValue("topSpeedCps", "max"),
+      reactionMs: Number.isFinite(stored.reactionMs) ? stored.reactionMs : bestLocalValue("reactionMs", "min"),
+    };
+  } catch {
+    return {
+      timeMs: bestLocalValue("timeMs", "min"),
+      topSpeedCps: bestLocalValue("topSpeedCps", "max"),
+      reactionMs: bestLocalValue("reactionMs", "min"),
+    };
+  }
+}
+
+function saveLocalPbs(pbs) {
+  try {
+    localStorage.setItem(PB_STORAGE_KEY, JSON.stringify(pbs));
+  } catch {
+    // Locked-down storage should not stop the race flow.
+  }
+}
+
+function updateLocalPbs(result) {
+  const pbs = loadLocalPbs();
+  const next = {
+    timeMs: Number.isFinite(pbs.timeMs) ? Math.min(pbs.timeMs, result.timeMs) : result.timeMs,
+    topSpeedCps: Number.isFinite(pbs.topSpeedCps) ? Math.max(pbs.topSpeedCps, result.topSpeedCps) : result.topSpeedCps,
+    reactionMs: Number.isFinite(result.reactionMs)
+      ? Number.isFinite(pbs.reactionMs)
+        ? Math.min(pbs.reactionMs, result.reactionMs)
+        : result.reactionMs
+      : pbs.reactionMs,
+  };
+  saveLocalPbs(next);
 }
 
 function recordLocalResult(result) {
@@ -113,10 +172,28 @@ function recordLocalResult(result) {
 }
 
 function updatePbReadout() {
-  const [pb] = loadLocalResults();
-  const text = pb ? formatSeconds(pb.timeMs) : "--";
+  const timePb = loadLocalPbs().timeMs;
+  const text = Number.isFinite(timePb) ? formatSeconds(timePb) : "--";
   pbReadout.textContent = text;
   resultPbReadout.textContent = text;
+}
+
+function getPbFlags(result, previousPbs) {
+  return {
+    time: !Number.isFinite(previousPbs.timeMs) || result.timeMs < previousPbs.timeMs,
+    speed: !Number.isFinite(previousPbs.topSpeedCps) || result.topSpeedCps > previousPbs.topSpeedCps,
+    reaction: Number.isFinite(result.reactionMs) && (!Number.isFinite(previousPbs.reactionMs) || result.reactionMs < previousPbs.reactionMs),
+  };
+}
+
+function renderFinishSubtitle(pbFlags) {
+  const pbs = [];
+  if (pbFlags.time) pbs.push("Time PB");
+  if (pbFlags.speed) pbs.push("Top speed PB");
+  if (pbFlags.reaction) pbs.push("Reaction PB");
+
+  finishSubtitle.classList.toggle("new-pb", pbs.length > 0);
+  finishSubtitle.textContent = pbs.length ? `New PB! ${pbs.join(" + ")}` : "Race complete";
 }
 
 function clearCountdownTimers() {
@@ -282,10 +359,14 @@ function finishRace(now) {
     createdAt: new Date().toISOString(),
   };
 
+  const previousPbs = loadLocalPbs();
+  const pbFlags = getPbFlags(currentResult, previousPbs);
   const leaderboardIndex = recordLocalResult(currentResult);
+  updateLocalPbs(currentResult);
   resultTime.textContent = formatSeconds(currentResult.timeMs);
   reactionTime.textContent = formatReaction(currentResult.reactionMs);
   topSpeedReadout.textContent = `${currentResult.topSpeedCps.toFixed(1)}/s`;
+  renderFinishSubtitle(pbFlags);
   setSignal("Finished");
   startButton.hidden = false;
   startButton.textContent = "Run Again";
@@ -429,12 +510,14 @@ async function fetchLeaderboard(limit = 100) {
 }
 
 function renderRemoteLeaderboard(results) {
+  leaderboardResults = [...results];
   if (!results.length) {
     remoteLeaderboard.innerHTML = '<p class="empty-state">No leaderboard runs yet.</p>';
     return;
   }
 
-  const rows = results
+  const sortedResults = sortLeaderboardResults(results);
+  const rows = sortedResults
     .map(
       (result, index) => `
         <div class="leaderboard-row">
@@ -448,80 +531,149 @@ function renderRemoteLeaderboard(results) {
     )
     .join("");
 
+  const sortLabel = (key, label) => {
+    const active = leaderboardSort.key === key;
+    const arrow = active ? (leaderboardSort.direction === "asc" ? " ^" : " v") : "";
+    return `${label}${arrow}`;
+  };
+
   remoteLeaderboard.innerHTML = `
     <div class="leaderboard-row leaderboard-head">
-      <span>#</span><strong>Name</strong><span>Time</span><span>Speed</span><span>React</span>
+      <span>#</span>
+      <button type="button" data-sort="name">${sortLabel("name", "Name")}</button>
+      <button type="button" data-sort="timeMs">${sortLabel("timeMs", "Time")}</button>
+      <button type="button" data-sort="topSpeedCps">${sortLabel("topSpeedCps", "Top speed (10m)")}</button>
+      <button type="button" data-sort="reactionMs">${sortLabel("reactionMs", "React")}</button>
     </div>
     ${rows}
   `;
+}
+
+function sortLeaderboardResults(results) {
+  const { key, direction } = leaderboardSort;
+  const multiplier = direction === "asc" ? 1 : -1;
+  return [...results].sort((a, b) => {
+    if (key === "name") return multiplier * String(a.name || "").localeCompare(String(b.name || ""));
+    return multiplier * ((a[key] ?? Number.POSITIVE_INFINITY) - (b[key] ?? Number.POSITIVE_INFINITY));
+  });
+}
+
+function setLeaderboardSort(key) {
+  if (leaderboardSort.key === key) {
+    leaderboardSort.direction = leaderboardSort.direction === "asc" ? "desc" : "asc";
+  } else {
+    leaderboardSort = { key, direction: key === "topSpeedCps" ? "desc" : "asc" };
+  }
+  renderRemoteLeaderboard(leaderboardResults);
+}
+
+function getBucketCount(values, min, max) {
+  const n = values.length;
+  if (n <= 2) return n;
+  const sorted = [...values].sort((a, b) => a - b);
+  const q1 = sorted[Math.floor((n - 1) * 0.25)];
+  const q3 = sorted[Math.floor((n - 1) * 0.75)];
+  const iqr = q3 - q1;
+  const spread = max - min;
+  if (spread === 0) return 1;
+
+  if (iqr > 0) {
+    const bucketWidth = (2 * iqr) / Math.cbrt(n);
+    if (bucketWidth > 0) return Math.max(2, Math.min(14, Math.ceil(spread / bucketWidth)));
+  }
+
+  return Math.max(2, Math.min(12, Math.ceil(Math.log2(n) + 1)));
 }
 
 function drawHistogram(canvas, values, label, formatter, pbValue) {
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
   const height = canvas.height;
-  const pad = 28;
+  const padLeft = 42;
+  const padRight = 22;
+  const chartTop = 42;
+  const chartBottom = height - 34;
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#0f120d";
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = "#fff8eb";
   ctx.font = "800 20px system-ui, sans-serif";
-  ctx.fillText(label, pad, 22);
+  ctx.fillText(label, padLeft, 24);
 
   if (!values.length) {
     ctx.fillStyle = "#cfc2a9";
     ctx.font = "700 18px system-ui, sans-serif";
-    ctx.fillText("No data yet", pad, height / 2);
+    ctx.fillText("No data yet", padLeft, height / 2);
     return;
   }
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const sameValue = rawMin === rawMax;
+  const min = sameValue ? rawMin - 0.5 : rawMin;
+  const max = sameValue ? rawMax + 0.5 : rawMax;
   const spread = max - min || 1;
-  const buckets = Array.from({ length: 8 }, () => 0);
-  values.forEach((value) => {
-    const bucket = Math.min(buckets.length - 1, Math.floor(((value - min) / spread) * buckets.length));
-    buckets[bucket] += 1;
-  });
+  const bucketCount = getBucketCount(values, min, max);
+  const buckets = values.length <= 2 ? values.map(() => 1) : Array.from({ length: bucketCount }, () => 0);
+  if (values.length > 2) {
+    values.forEach((value) => {
+      const bucket = Math.min(bucketCount - 1, Math.floor(((value - min) / spread) * bucketCount));
+      buckets[bucket] += 1;
+    });
+  }
 
   const maxBucket = Math.max(...buckets);
-  const chartTop = 38;
-  const chartHeight = height - 72;
-  const barGap = 5;
-  const barWidth = (width - pad * 2 - barGap * (buckets.length - 1)) / buckets.length;
+  const chartHeight = chartBottom - chartTop;
+  const chartWidth = width - padLeft - padRight;
+  const barGap = values.length <= 2 ? 0 : 3;
+  const barWidth = (chartWidth - barGap * (bucketCount - 1)) / bucketCount;
+
+  ctx.strokeStyle = "rgba(255, 248, 235, 0.22)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padLeft, chartBottom);
+  ctx.lineTo(width - padRight, chartBottom);
+  ctx.stroke();
 
   buckets.forEach((count, index) => {
     const barHeight = (count / maxBucket) * chartHeight;
-    const x = pad + index * (barWidth + barGap);
-    const y = chartTop + chartHeight - barHeight;
-    ctx.fillStyle = "#67c7ff";
+    const x = padLeft + index * (barWidth + barGap);
+    const y = chartBottom - barHeight;
+    const gradient = ctx.createLinearGradient(0, y, 0, chartBottom);
+    gradient.addColorStop(0, "#8be0ff");
+    gradient.addColorStop(1, "#2c83ff");
+    ctx.fillStyle = gradient;
     ctx.fillRect(x, y, barWidth, barHeight);
   });
 
   if (Number.isFinite(pbValue)) {
-    const x = pad + ((pbValue - min) / spread) * (width - pad * 2);
+    const x = padLeft + ((pbValue - min) / spread) * chartWidth;
     ctx.strokeStyle = "#ffd34d";
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(x, chartTop);
-    ctx.lineTo(x, chartTop + chartHeight);
+    ctx.lineTo(x, chartBottom);
     ctx.stroke();
+    ctx.fillStyle = "#ffd34d";
+    ctx.font = "900 14px system-ui, sans-serif";
+    ctx.fillText("PB", Math.min(width - padRight - 22, Math.max(padLeft, x + 5)), chartTop + 14);
   }
 
   ctx.fillStyle = "#cfc2a9";
   ctx.font = "700 16px system-ui, sans-serif";
-  ctx.fillText(formatter(min), pad, height - 14);
-  ctx.fillText(formatter(max), width - pad - 72, height - 14);
+  ctx.fillText(formatter(rawMin), padLeft, height - 12);
+  const maxLabel = formatter(rawMax);
+  ctx.fillText(maxLabel, width - padRight - ctx.measureText(maxLabel).width, height - 12);
 }
 
 function renderStats(results) {
-  const [pb] = loadLocalResults();
+  const pbs = loadLocalPbs();
   const times = results.map((result) => result.timeMs).filter(Number.isFinite);
   const speeds = results.map((result) => result.topSpeedCps).filter(Number.isFinite);
   const reactions = results.map((result) => result.reactionMs).filter(Number.isFinite);
-  drawHistogram(timeHistogram, times, "Best times", formatSeconds, pb?.timeMs);
-  drawHistogram(speedHistogram, speeds, "Top speeds", (value) => `${value.toFixed(1)}/s`, pb?.topSpeedCps);
-  drawHistogram(reactionHistogram, reactions, "Reactions", formatReaction, pb?.reactionMs);
+  drawHistogram(timeHistogram, times, "Best times", formatSeconds, pbs.timeMs);
+  drawHistogram(speedHistogram, speeds, "Top speeds (10m)", (value) => `${value.toFixed(1)}/s`, pbs.topSpeedCps);
+  drawHistogram(reactionHistogram, reactions, "Best reactions", formatReaction, pbs.reactionMs);
 }
 
 async function openLeaderboard() {
@@ -561,6 +713,10 @@ closeResultsButton.addEventListener("click", () => {
   resultsPanel.hidden = true;
 });
 openLeaderboardButton.addEventListener("click", openLeaderboard);
+remoteLeaderboard.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sort]");
+  if (button) setLeaderboardSort(button.dataset.sort);
+});
 closeLeaderboardButton.addEventListener("click", () => {
   leaderboardModal.hidden = true;
 });

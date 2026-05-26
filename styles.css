@@ -58,16 +58,17 @@ button {
   position: relative;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
   width: min(100%, 560px);
   margin: 0 auto;
 }
 
 .hud > div,
-.result-grid > div {
+.result-grid > div,
+.leaderboard-button {
   min-width: 0;
-  padding: 10px 8px;
+  padding: 8px 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   background: var(--panel);
@@ -78,7 +79,7 @@ button {
 .label {
   display: block;
   color: var(--muted);
-  font-size: clamp(0.58rem, 2.35vw, 0.72rem);
+  font-size: clamp(0.5rem, 2vw, 0.68rem);
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -87,23 +88,34 @@ button {
 strong {
   display: block;
   margin-top: 2px;
-  font-size: clamp(0.92rem, 4.1vw, 1.35rem);
+  font-size: clamp(0.78rem, 3.35vw, 1.18rem);
   line-height: 1;
 }
 
 .leaderboard-button {
-  position: absolute;
-  z-index: 6;
-  top: calc(max(14px, env(safe-area-inset-top)) + 58px);
-  right: 14px;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(18, 20, 17, 0.82);
-  color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 950;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  min-height: 48px;
+  border-color: rgba(255, 211, 77, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 211, 77, 0.28), rgba(140, 95, 20, 0.18)),
+    rgba(35, 27, 11, 0.9);
+  color: #fff8d8;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.22), 0 0 18px rgba(255, 211, 77, 0.16);
+  font-weight: 1000;
+}
+
+.leaderboard-button span {
+  display: block;
+  font-size: clamp(1rem, 4.4vw, 1.35rem);
+  line-height: 0.9;
+}
+
+.leaderboard-button strong {
+  color: #fff3b0;
+  font-size: clamp(0.58rem, 2.4vw, 0.75rem);
+  text-transform: uppercase;
 }
 
 .track {
@@ -423,6 +435,30 @@ strong {
   line-height: 1;
 }
 
+.finish-title h2 {
+  color: var(--accent);
+  font-size: clamp(2.3rem, 12vw, 4rem);
+  letter-spacing: 0;
+  text-shadow: 0 3px 0 #6c4a00, 0 0 22px rgba(255, 211, 77, 0.34);
+}
+
+.finish-title p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
+.finish-title p.new-pb {
+  width: fit-content;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 211, 77, 0.58);
+  border-radius: 8px;
+  background: rgba(255, 211, 77, 0.14);
+  color: #ffe88d;
+  box-shadow: 0 0 18px rgba(255, 211, 77, 0.18);
+}
+
 .icon-button {
   display: grid;
   place-items: center;
@@ -571,7 +607,7 @@ strong {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 28px minmax(76px, 1fr) 64px 62px 58px;
+  grid-template-columns: 28px minmax(72px, 1fr) 64px 74px 58px;
   gap: 6px;
   align-items: center;
   min-height: 38px;
@@ -591,6 +627,19 @@ strong {
 
 .leaderboard-row span {
   min-width: 0;
+}
+
+.leaderboard-row button {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  text-align: left;
+  text-transform: uppercase;
 }
 
 .leaderboard-head {
