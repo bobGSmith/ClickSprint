@@ -54,6 +54,19 @@ button {
   padding: max(14px, env(safe-area-inset-top)) 14px 0;
 }
 
+.app-title {
+  position: relative;
+  z-index: 5;
+  margin: 0 auto 5px;
+  color: #ffe88d;
+  font-size: clamp(0.92rem, 3.4vw, 1.15rem);
+  font-weight: 1000;
+  letter-spacing: 0;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.42);
+}
+
 .hud {
   position: relative;
   z-index: 5;
@@ -121,7 +134,7 @@ strong {
 .track {
   position: absolute;
   left: 50%;
-  top: calc(max(14px, env(safe-area-inset-top)) + 92px);
+  top: calc(max(14px, env(safe-area-inset-top)) + 110px);
   bottom: 104px;
   width: min(86vw, 360px);
   transform: translateX(-50%);

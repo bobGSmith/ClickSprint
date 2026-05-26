@@ -591,6 +591,39 @@ function getBucketCount(values, min, max) {
   return Math.max(2, Math.min(12, Math.ceil(Math.log2(n) + 1)));
 }
 
+function quantile(sortedValues, percentile) {
+  if (!sortedValues.length) return null;
+  const index = (sortedValues.length - 1) * percentile;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sortedValues[lower];
+  const weight = index - lower;
+  return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
+}
+
+function filterSlowOutliers(values) {
+  if (values.length < 4) return values;
+  const sorted = [...values].sort((a, b) => a - b);
+  const q1 = quantile(sorted, 0.25);
+  const q3 = quantile(sorted, 0.75);
+  const iqr = q3 - q1;
+  if (iqr <= 0) return values;
+
+  const upperFence = q3 + 1.5 * iqr;
+  const filtered = values.filter((value) => value <= upperFence);
+  return filtered.length ? filtered : values;
+}
+
+function getAxisTicks(min, max, formatter, chartWidth) {
+  if (min === max) return [{ value: min, label: formatter(min) }];
+  const targetGap = 92;
+  const count = Math.max(2, Math.min(5, Math.floor(chartWidth / targetGap) + 1));
+  return Array.from({ length: count }, (_, index) => {
+    const value = min + ((max - min) * index) / (count - 1);
+    return { value, label: formatter(value) };
+  });
+}
+
 function drawHistogram(canvas, values, label, formatter, pbValue) {
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
@@ -613,16 +646,18 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
     return;
   }
 
-  const rawMin = Math.min(...values);
-  const rawMax = Math.max(...values);
+  const chartValues = filterSlowOutliers(values);
+  const ignoredCount = values.length - chartValues.length;
+  const rawMin = Math.min(...chartValues);
+  const rawMax = Math.max(...chartValues);
   const sameValue = rawMin === rawMax;
   const min = sameValue ? rawMin - 0.5 : rawMin;
   const max = sameValue ? rawMax + 0.5 : rawMax;
   const spread = max - min || 1;
-  const bucketCount = getBucketCount(values, min, max);
-  const buckets = values.length <= 2 ? values.map(() => 1) : Array.from({ length: bucketCount }, () => 0);
-  if (values.length > 2) {
-    values.forEach((value) => {
+  const bucketCount = getBucketCount(chartValues, min, max);
+  const buckets = chartValues.length <= 2 ? chartValues.map(() => 1) : Array.from({ length: bucketCount }, () => 0);
+  if (chartValues.length > 2) {
+    chartValues.forEach((value) => {
       const bucket = Math.min(bucketCount - 1, Math.floor(((value - min) / spread) * bucketCount));
       buckets[bucket] += 1;
     });
@@ -631,7 +666,7 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
   const maxBucket = Math.max(...buckets);
   const chartHeight = chartBottom - chartTop;
   const chartWidth = width - padLeft - padRight;
-  const barGap = values.length <= 2 ? 0 : 3;
+  const barGap = chartValues.length <= 2 ? 0 : 3;
   const barWidth = (chartWidth - barGap * (bucketCount - 1)) / bucketCount;
 
   ctx.strokeStyle = "rgba(255, 248, 235, 0.22)";
@@ -640,6 +675,24 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
   ctx.moveTo(padLeft, chartBottom);
   ctx.lineTo(width - padRight, chartBottom);
   ctx.stroke();
+
+  ctx.fillStyle = "#aab5bb";
+  ctx.font = "700 13px system-ui, sans-serif";
+  ctx.textBaseline = "top";
+  getAxisTicks(rawMin, rawMax, formatter, chartWidth).forEach((tick, index, ticks) => {
+    const x = padLeft + ((tick.value - min) / spread) * chartWidth;
+    ctx.strokeStyle = "rgba(255, 248, 235, 0.24)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, chartBottom);
+    ctx.lineTo(x, chartBottom + 5);
+    ctx.stroke();
+
+    const labelWidth = ctx.measureText(tick.label).width;
+    const labelX =
+      index === 0 ? padLeft : index === ticks.length - 1 ? width - padRight - labelWidth : x - labelWidth / 2;
+    ctx.fillText(tick.label, labelX, chartBottom + 8);
+  });
 
   buckets.forEach((count, index) => {
     const barHeight = (count / maxBucket) * chartHeight;
@@ -652,7 +705,7 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
     ctx.fillRect(x, y, barWidth, barHeight);
   });
 
-  if (Number.isFinite(pbValue)) {
+  if (Number.isFinite(pbValue) && pbValue >= min && pbValue <= max) {
     const x = padLeft + ((pbValue - min) / spread) * chartWidth;
     ctx.strokeStyle = "#ffd34d";
     ctx.lineWidth = 4;
@@ -665,11 +718,11 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
     ctx.fillText("PB", Math.min(width - padRight - 22, Math.max(padLeft, x + 5)), chartTop + 14);
   }
 
-  ctx.fillStyle = "#cfc2a9";
-  ctx.font = "700 16px system-ui, sans-serif";
-  ctx.fillText(formatter(rawMin), padLeft, height - 12);
-  const maxLabel = formatter(rawMax);
-  ctx.fillText(maxLabel, width - padRight - ctx.measureText(maxLabel).width, height - 12);
+  if (ignoredCount > 0) {
+    ctx.fillStyle = "#7f8b91";
+    ctx.font = "700 13px system-ui, sans-serif";
+    ctx.fillText(`${ignoredCount} slow outlier${ignoredCount === 1 ? "" : "s"} hidden`, padLeft, chartTop + 16);
+  }
 }
 
 function renderStats(results) {
