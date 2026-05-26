@@ -1,0 +1,436 @@
+:root {
+  color-scheme: dark;
+  --bg: #11130f;
+  --track: #b84531;
+  --track-dark: #7f2e25;
+  --line: rgba(255, 245, 220, 0.82);
+  --grass: #244632;
+  --panel: rgba(18, 20, 17, 0.82);
+  --text: #fff8eb;
+  --muted: #cfc2a9;
+  --accent: #ffd34d;
+  --blue: #67c7ff;
+  --red: #ff604f;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+}
+
+.game-shell {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  width: 100vw;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+  background: #1f3f2c;
+}
+
+.track-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  padding: max(14px, env(safe-area-inset-top)) 14px 0;
+}
+
+.hud {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: min(100%, 560px);
+  margin: 0 auto;
+}
+
+.hud > div,
+.result-grid > div {
+  min-width: 0;
+  padding: 10px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  text-align: center;
+}
+
+.label {
+  display: block;
+  color: var(--muted);
+  font-size: clamp(0.58rem, 2.35vw, 0.72rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+strong {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(0.92rem, 4.1vw, 1.35rem);
+  line-height: 1;
+}
+
+.track {
+  position: absolute;
+  left: 50%;
+  top: calc(max(14px, env(safe-area-inset-top)) + 92px);
+  bottom: 104px;
+  width: min(86vw, 360px);
+  transform: translateX(-50%);
+  overflow: hidden;
+  border: 5px solid #f5e7c5;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 245, 220, 0.2) 0 3px, transparent 3px 40px),
+    linear-gradient(90deg, transparent 0 calc(50% - 2px), rgba(255, 245, 220, 0.85) calc(50% - 2px) calc(50% + 2px), transparent calc(50% + 2px)),
+    #b84632;
+  box-shadow: 0 12px 0 #7e2d24, 0 18px 38px rgba(0, 0, 0, 0.34);
+}
+
+.track::before,
+.track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.track::before {
+  background:
+    linear-gradient(90deg, rgba(255, 245, 220, 0.88) 0 4px, transparent 4px calc(25% - 2px), rgba(255, 245, 220, 0.45) calc(25% - 2px) calc(25% + 2px), transparent calc(25% + 2px) calc(75% - 2px), rgba(255, 245, 220, 0.45) calc(75% - 2px) calc(75% + 2px), transparent calc(75% + 2px) calc(100% - 4px), rgba(255, 245, 220, 0.88) calc(100% - 4px));
+}
+
+.track::after {
+  background: repeating-linear-gradient(0deg, transparent 0 18px, rgba(0, 0, 0, 0.06) 18px 20px);
+  mix-blend-mode: multiply;
+}
+
+.start-line,
+.finish-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  background:
+    linear-gradient(90deg, #fff 0 12.5%, #111 12.5% 25%, #fff 25% 37.5%, #111 37.5% 50%, #fff 50% 62.5%, #111 62.5% 75%, #fff 75% 87.5%, #111 87.5%);
+  color: #111;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.start-line {
+  bottom: 18px;
+}
+
+.finish-line {
+  top: 18px;
+}
+
+.runner {
+  --runner-top: 82%;
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: var(--runner-top);
+  width: 34px;
+  height: 44px;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+}
+
+.runner.step-left .runner-arm-left {
+  height: 12px;
+}
+
+.runner.step-left .runner-arm-right {
+  height: 21px;
+}
+
+.runner.step-right .runner-arm-left {
+  height: 21px;
+}
+
+.runner.step-right .runner-arm-right {
+  height: 12px;
+}
+
+.runner.step-left .runner-leg-left {
+  height: 12px;
+}
+
+.runner.step-left .runner-leg-right {
+  height: 24px;
+}
+
+.runner.step-right .runner-leg-left {
+  height: 24px;
+}
+
+.runner.step-right .runner-leg-right {
+  height: 12px;
+}
+
+.runner-head,
+.runner-body,
+.runner-arm,
+.runner-leg {
+  position: absolute;
+  display: block;
+  border: 2px solid #17140b;
+}
+
+.runner-head {
+  left: 10px;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  background: #f3b27a;
+}
+
+.runner-body {
+  left: 8px;
+  top: 15px;
+  width: 18px;
+  height: 18px;
+  background: var(--blue);
+}
+
+.runner-arm {
+  top: 18px;
+  width: 8px;
+  height: 18px;
+  background: #f3b27a;
+  transform-origin: 50% 0;
+}
+
+.runner-arm-left {
+  left: 1px;
+}
+
+.runner-arm-right {
+  right: 1px;
+}
+
+.runner-leg {
+  top: 31px;
+  width: 9px;
+  height: 20px;
+  background: #fff8eb;
+  transform-origin: 50% 0;
+}
+
+.runner-leg-left {
+  left: 8px;
+}
+
+.runner-leg-right {
+  right: 8px;
+}
+
+.signal {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 46%;
+  width: min(88vw, 430px);
+  transform: translate(-50%, -50%);
+  color: var(--text);
+  font-size: clamp(2.2rem, 13vw, 4.3rem);
+  font-weight: 1000;
+  line-height: 0.95;
+  text-align: center;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.62);
+}
+
+.signal small {
+  display: block;
+  max-width: 290px;
+  margin: 12px auto 0;
+  color: var(--muted);
+  font-size: clamp(0.9rem, 4vw, 1.05rem);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.signal.go {
+  color: #111;
+  text-shadow: none;
+}
+
+.track-stage.go-flash::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  background: var(--accent);
+  animation: flash 360ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.94;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.start-button {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 116px;
+  width: min(78vw, 310px);
+  min-height: 52px;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #17140b;
+  font-weight: 1000;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+}
+
+.start-button[hidden] {
+  display: none;
+}
+
+.shoe-controls {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(17, 19, 15, 0), rgba(17, 19, 15, 0.86) 20%, #11130f);
+}
+
+.shoe-button {
+  display: grid;
+  place-items: center;
+  height: clamp(86px, 17svh, 138px);
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: #22251d;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.shoe-button:active,
+.shoe-button.active {
+  transform: translateY(3px);
+  background: #303426;
+}
+
+.shoe-button.invalid {
+  animation: badStep 190ms ease-out;
+}
+
+@keyframes badStep {
+  50% {
+    background: var(--red);
+  }
+}
+
+.shoe {
+  display: block;
+  font-size: clamp(3.3rem, 16vw, 5.8rem);
+  line-height: 1;
+  filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.45));
+}
+
+.right-shoe .shoe {
+  transform: scaleX(-1);
+}
+
+.results {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: calc(112px + env(safe-area-inset-bottom));
+  width: min(92vw, 520px);
+  padding: 12px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(18, 20, 17, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#cpsChart {
+  display: block;
+  width: 100%;
+  height: 122px;
+  border-radius: 6px;
+  background: #0f120d;
+}
+
+.leaderboard {
+  margin-top: 10px;
+  color: var(--text);
+}
+
+.leaderboard-title {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+#leaderboardList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 14px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+#leaderboardList li {
+  padding-left: 2px;
+}
+
+#leaderboardList .new-result {
+  color: var(--accent);
+}
+
+@media (min-width: 720px) {
+  .game-shell {
+    width: min(430px, 100vw);
+    margin: 0 auto;
+    border-inline: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}

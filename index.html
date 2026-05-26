@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>100m Tap Sprint</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="100 meter tap sprint game">
+      <section class="track-stage" aria-live="polite">
+        <div class="hud">
+          <div>
+            <span class="label">Distance</span>
+            <strong id="distanceReadout">100.0m</strong>
+          </div>
+          <div>
+            <span class="label">Time</span>
+            <strong id="timeReadout">0.00s</strong>
+          </div>
+          <div>
+            <span class="label">Pace</span>
+            <strong id="paceReadout">0.0/s</strong>
+          </div>
+          <div>
+            <span class="label">PB</span>
+            <strong id="pbReadout">--</strong>
+          </div>
+        </div>
+
+        <div class="track">
+          <div class="start-line"><span>Start</span></div>
+          <div class="runner" id="runner" aria-hidden="true">
+            <span class="runner-head"></span>
+            <span class="runner-body"></span>
+            <span class="runner-arm runner-arm-left"></span>
+            <span class="runner-arm runner-arm-right"></span>
+            <span class="runner-leg runner-leg-left"></span>
+            <span class="runner-leg runner-leg-right"></span>
+          </div>
+          <div class="finish-line" id="finishLine">
+            <span>Finish</span>
+          </div>
+        </div>
+
+        <div class="signal" id="signalText">100m Tap Sprint</div>
+        <button class="start-button" id="startButton" type="button">Start</button>
+      </section>
+
+      <section class="results" id="resultsPanel" hidden>
+        <div class="result-grid">
+          <div>
+            <span class="label">Total time</span>
+            <strong id="resultTime">0.00s</strong>
+          </div>
+          <div>
+            <span class="label">Reaction</span>
+            <strong id="reactionTime">--</strong>
+          </div>
+        </div>
+        <canvas id="cpsChart" width="640" height="220" aria-label="Clicks per second over time"></canvas>
+        <div class="leaderboard">
+          <div class="leaderboard-title">Top 10</div>
+          <ol id="leaderboardList"></ol>
+        </div>
+      </section>
+
+      <section class="shoe-controls" aria-label="Running controls">
+        <button class="shoe-button left-shoe" id="leftShoe" type="button" aria-label="Left shoe">
+          <span class="shoe" aria-hidden="true">👟</span>
+        </button>
+        <button class="shoe-button right-shoe" id="rightShoe" type="button" aria-label="Right shoe">
+          <span class="shoe" aria-hidden="true">👟</span>
+        </button>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
