@@ -601,7 +601,7 @@ function quantile(sortedValues, percentile) {
   return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
 }
 
-function filterSlowOutliers(values) {
+function filterOutliers(values, direction = "high") {
   if (values.length < 4) return values;
   const sorted = [...values].sort((a, b) => a - b);
   const q1 = quantile(sorted, 0.25);
@@ -609,8 +609,13 @@ function filterSlowOutliers(values) {
   const iqr = q3 - q1;
   if (iqr <= 0) return values;
 
+  const lowerFence = q1 - 1.5 * iqr;
   const upperFence = q3 + 1.5 * iqr;
-  const filtered = values.filter((value) => value <= upperFence);
+  const filtered = values.filter((value) => {
+    if (direction === "low") return value >= lowerFence;
+    if (direction === "both") return value >= lowerFence && value <= upperFence;
+    return value <= upperFence;
+  });
   return filtered.length ? filtered : values;
 }
 
@@ -624,7 +629,7 @@ function getAxisTicks(min, max, formatter, chartWidth) {
   });
 }
 
-function drawHistogram(canvas, values, label, formatter, pbValue) {
+function drawHistogram(canvas, values, label, formatter, pbValue, outlierDirection = "high") {
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
   const height = canvas.height;
@@ -646,8 +651,7 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
     return;
   }
 
-  const chartValues = filterSlowOutliers(values);
-  const ignoredCount = values.length - chartValues.length;
+  const chartValues = filterOutliers(values, outlierDirection);
   const rawMin = Math.min(...chartValues);
   const rawMax = Math.max(...chartValues);
   const sameValue = rawMin === rawMax;
@@ -717,12 +721,6 @@ function drawHistogram(canvas, values, label, formatter, pbValue) {
     ctx.font = "900 14px system-ui, sans-serif";
     ctx.fillText("PB", Math.min(width - padRight - 22, Math.max(padLeft, x + 5)), chartTop + 14);
   }
-
-  if (ignoredCount > 0) {
-    ctx.fillStyle = "#7f8b91";
-    ctx.font = "700 13px system-ui, sans-serif";
-    ctx.fillText(`${ignoredCount} slow outlier${ignoredCount === 1 ? "" : "s"} hidden`, padLeft, chartTop + 16);
-  }
 }
 
 function renderStats(results) {
@@ -730,9 +728,9 @@ function renderStats(results) {
   const times = results.map((result) => result.timeMs).filter(Number.isFinite);
   const speeds = results.map((result) => result.topSpeedCps).filter(Number.isFinite);
   const reactions = results.map((result) => result.reactionMs).filter(Number.isFinite);
-  drawHistogram(timeHistogram, times, "Best times", formatSeconds, pbs.timeMs);
-  drawHistogram(speedHistogram, speeds, "Top speeds (10m)", (value) => `${value.toFixed(1)}/s`, pbs.topSpeedCps);
-  drawHistogram(reactionHistogram, reactions, "Best reactions", formatReaction, pbs.reactionMs);
+  drawHistogram(timeHistogram, times, "Best times", formatSeconds, pbs.timeMs, "high");
+  drawHistogram(speedHistogram, speeds, "Top speeds (10m)", (value) => `${value.toFixed(1)}/s`, pbs.topSpeedCps, "low");
+  drawHistogram(reactionHistogram, reactions, "Best reactions", formatReaction, pbs.reactionMs, "high");
 }
 
 async function openLeaderboard() {
