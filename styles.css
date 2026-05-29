@@ -362,19 +362,19 @@ strong {
 .shoe-controls {
   position: relative;
   z-index: 10;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  display: block;
   padding: 8px 8px max(10px, env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(17, 19, 15, 0), rgba(17, 19, 15, 0.86) 20%, #11130f);
   touch-action: none;
 }
 
-.shoe-button {
-  display: grid;
-  place-items: center;
+.tap-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 9vw, 48px);
+  width: 100%;
   height: clamp(104px, 20svh, 156px);
-  min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   background: #22251d;
@@ -382,13 +382,13 @@ strong {
   touch-action: none;
 }
 
-.shoe-button:active,
-.shoe-button.active {
+.tap-button:active,
+.tap-button.active {
   transform: translateY(3px);
   background: #303426;
 }
 
-.shoe-button.invalid {
+.tap-button.invalid {
   animation: badStep 190ms ease-out;
 }
 
@@ -405,7 +405,7 @@ strong {
   filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.45));
 }
 
-.right-shoe .shoe {
+.right-shoe {
   transform: scaleX(-1);
 }
 

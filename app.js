@@ -5,8 +5,7 @@ const pbReadout = document.querySelector("#pbReadout");
 const signalText = document.querySelector("#signalText");
 const startButton = document.querySelector("#startButton");
 const openLeaderboardButton = document.querySelector("#openLeaderboardButton");
-const leftShoe = document.querySelector("#leftShoe");
-const rightShoe = document.querySelector("#rightShoe");
+const tapButton = document.querySelector("#tapButton");
 const resultsPanel = document.querySelector("#resultsPanel");
 const closeResultsButton = document.querySelector("#closeResultsButton");
 const finishSubtitle = document.querySelector("#finishSubtitle");
@@ -56,6 +55,7 @@ let rafId = 0;
 let currentResult = null;
 let leaderboardResults = [];
 let leaderboardSort = { key: "timeMs", direction: "asc" };
+let nextStrideFoot = "left";
 
 function formatSeconds(ms) {
   return `${(ms / 1000).toFixed(2)}s`;
@@ -211,6 +211,7 @@ function resetRace() {
   finishAt = 0;
   firstClickAt = 0;
   validClicks = [];
+  nextStrideFoot = "left";
   currentResult = null;
   startButton.hidden = false;
   startButton.textContent = "Start";
@@ -260,11 +261,9 @@ function falseStart() {
   state = "false-start";
   setSignal("False start");
   startButton.hidden = true;
-  leftShoe.classList.add("invalid");
-  rightShoe.classList.add("invalid");
+  tapButton.classList.add("invalid");
   setTimeout(() => {
-    leftShoe.classList.remove("invalid");
-    rightShoe.classList.remove("invalid");
+    tapButton.classList.remove("invalid");
   }, 220);
   falseStartTimer = setTimeout(resetRace, 1300);
 }
@@ -293,7 +292,7 @@ function updateTrack() {
   runner.style.setProperty("--runner-top", `${topPercent.toFixed(2)}%`);
 }
 
-function handleShoeTap(foot) {
+function handleShoeTap() {
   if (state === "countdown" || state === "waiting") {
     falseStart();
     return;
@@ -306,10 +305,11 @@ function handleShoeTap(foot) {
   validClicks.push(now);
   distance = Math.min(RACE_METERS, distance + METERS_PER_CLICK);
 
-  const button = foot === "left" ? leftShoe : rightShoe;
-  button.classList.add("active");
-  setTimeout(() => button.classList.remove("active"), 80);
-  runner.className = `runner step-${foot}`;
+  const strideFoot = nextStrideFoot;
+  nextStrideFoot = strideFoot === "left" ? "right" : "left";
+  tapButton.classList.add("active");
+  setTimeout(() => tapButton.classList.remove("active"), 80);
+  runner.className = `runner step-${strideFoot}`;
 
   updateReadouts(now - raceStartAt);
   updateTrack();
@@ -737,12 +737,12 @@ function setLeaderboardTab(tab) {
   scoresPanel.hidden = statsActive;
 }
 
-function bindShoe(button, foot) {
+function bindTapButton(button) {
   button.addEventListener(
     "pointerdown",
     (event) => {
       event.preventDefault();
-      handleShoeTap(foot);
+      handleShoeTap();
     },
     { passive: false },
   );
@@ -788,13 +788,9 @@ submitRunForm.addEventListener("submit", async (event) => {
 window.addEventListener("keydown", (event) => {
   if (event.repeat) return;
   const key = event.key.toLowerCase();
-  if (key === "g") {
+  if (key === "g" || key === "h" || event.code === "Space") {
     event.preventDefault();
-    handleShoeTap("left");
-  }
-  if (key === "h") {
-    event.preventDefault();
-    handleShoeTap("right");
+    handleShoeTap();
   }
   if (key === "escape") {
     resultsPanel.hidden = true;
@@ -802,6 +798,5 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
-bindShoe(leftShoe, "left");
-bindShoe(rightShoe, "right");
+bindTapButton(tapButton);
 resetRace();
